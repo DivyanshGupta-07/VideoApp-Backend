@@ -3,6 +3,7 @@ import { ApiError } from "../utils/ApiError.js";
 import { User } from "../models/user.model.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
+import mongoose from "mongoose";
 import jwt from "jsonwebtoken";
 import fs, { appendFile } from "fs";
 
@@ -172,8 +173,8 @@ const logoutUser = asyncHandler(async (req, res) => {
   await User.findByIdAndUpdate(
     req.user._id,
     {
-      $set: {
-        refreshToken: undefined,
+      $unset: {
+        refreshToken: 1, //this will unset the given feild
       },
     },
     {
@@ -196,11 +197,10 @@ const logoutUser = asyncHandler(async (req, res) => {
 
 const refreshAccessToken = asyncHandler(async (req, res) => {
   //grab the refresh token
-  const incommingRefreshToken =
-    req.cookie.refreshToken || req.body.refreshToken;
+  const incommingRefreshToken = req.cookies?.refreshToken || req.body?.refreshToken;
 
   if (!incommingRefreshToken) {
-    throw new ApiError(401, "unauthorized request");
+    throw new ApiError(401, "unauthorized request on refreshing tokens");
   }
 
   try {
@@ -251,7 +251,7 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
 
 const changeCurrentPassword = asyncHandler(async (req,res) =>{
   //get data from user
-  const {oldPassword, newPassword} = req.body
+  const {oldPassword, newPassword} = req.body;
 
   const user = await User.findById(req.user?._id)
 
@@ -274,7 +274,7 @@ const changeCurrentPassword = asyncHandler(async (req,res) =>{
 const getCurrentUser = asyncHandler( async(req,res) => {
   return res
   .status(200)
-  .json(200,req.user,"current user fetched sucessfully")
+  .json(new ApiResponse(200,req.user,"current user fetched sucessfully"))
 })
 
 const updateAccountDetails = asyncHandler(async(req,res) =>{
@@ -479,10 +479,10 @@ const getWatchHistory = asyncHandler(async(req,res) => {
       }
     }
   ])
-
+  
   return res
   .status(200)
-  .json(new ApiResponse(200,user[0].getWatchHistory,"watch history featched sucessfully"))
+  .json(new ApiResponse(200,user[0].watchHistory,"watch history featched sucessfully"))
 })
 
 export { 
